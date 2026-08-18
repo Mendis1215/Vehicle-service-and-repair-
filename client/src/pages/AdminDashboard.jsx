@@ -342,6 +342,7 @@ function ServicesTab() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: '', description: '', imageUrl: '' });
+  const [file, setFile] = useState(null);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -359,18 +360,31 @@ function ServicesTab() {
     e.preventDefault();
     setSaving(true);
     try {
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('description', form.description);
+      if (file) {
+        formData.append('image', file);
+      } else if (form.imageUrl) {
+        formData.append('imageUrl', form.imageUrl);
+      }
+
+      const headers = { 'Content-Type': 'multipart/form-data' };
       if (editId) {
-        await API.put(`/admin/services/${editId}`, form);
+        await API.put(`/admin/services/${editId}`, formData, { headers });
         toast.success('Service updated');
         setEditId(null);
       } else {
-        await API.post('/admin/services', form);
+        await API.post('/admin/services', formData, { headers });
         toast.success('Service added');
       }
       setForm({ title: '', description: '', imageUrl: '' });
+      setFile(null);
+      const fileInput = document.getElementById('service-file-input');
+      if (fileInput) fileInput.value = '';
       fetchServices();
-    } catch {
-      toast.error('Failed to save service');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to save service');
     } finally {
       setSaving(false);
     }
@@ -400,7 +414,7 @@ function ServicesTab() {
       <form onSubmit={handleSave} className="bg-brand-card border border-brand-gray/30 rounded-lg p-5 mb-8 space-y-4">
         <h3 className="font-heading text-lg text-brand-white">{editId ? 'EDIT SERVICE' : 'ADD NEW SERVICE'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+          <div className="sm:col-span-2">
             <label className="text-brand-text-gray text-xs font-body mb-1 block">Title</label>
             <input
               id="service-title-input"
@@ -412,16 +426,26 @@ function ServicesTab() {
               required
             />
           </div>
-          <div>
-            <label className="text-brand-text-gray text-xs font-body mb-1 block">Image URL</label>
-            <input
-              id="service-image-input"
-              type="text"
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              className="w-full bg-brand-dark border border-brand-gray/50 rounded px-3 py-2 text-brand-white font-body text-sm focus:outline-none focus:border-brand-red"
-              placeholder="https://..."
-            />
+          <div className="sm:col-span-2">
+            <label className="text-brand-text-gray text-xs font-body mb-1 block">Image File (PNG/JPG) or URL</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                id="service-file-input"
+                type="file"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={(e) => setFile(e.target.files[0])}
+                className="w-full bg-brand-dark border border-brand-gray/50 rounded px-2 py-1.5 text-brand-text-gray font-body text-sm focus:outline-none focus:border-brand-red flex-1"
+              />
+              <span className="text-brand-text-gray self-center text-xs">OR</span>
+              <input
+                id="service-image-input"
+                type="text"
+                value={form.imageUrl}
+                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                className="w-full bg-brand-dark border border-brand-gray/50 rounded px-3 py-2 text-brand-white font-body text-sm focus:outline-none focus:border-brand-red flex-1"
+                placeholder="https://..."
+              />
+            </div>
           </div>
           <div className="sm:col-span-2">
             <label className="text-brand-text-gray text-xs font-body mb-1 block">Description</label>
