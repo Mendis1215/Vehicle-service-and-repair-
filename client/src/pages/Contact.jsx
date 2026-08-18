@@ -127,25 +127,6 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Map */}
-      <section className="pb-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="font-heading text-2xl text-brand-white mb-4 text-center">FIND US ON THE MAP</h2>
-          <div className="red-line-center mb-6" />
-          <div className="rounded-lg overflow-hidden border border-brand-gray/30">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3967.7!2d80.0!3d6.27!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zBsKwMTYnMTIuMCJOIDgwwrAwMCcwMC4wIkU!5e0!3m2!1sen!2slk!4v1620000000000!5m2!1sen!2slk"
-              width="100%"
-              height="400"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Yasarathna Motors Location"
-            />
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </main>
