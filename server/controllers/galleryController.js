@@ -19,16 +19,16 @@ exports.addGalleryItem = async (req, res) => {
     let thumbnailUrl = '';
     let publicId = '';
 
-    if (type === 'video') {
+    if (req.file) {
+      // Cloudinary file upload (image or video)
+      url = req.file.path;
+      thumbnailUrl = req.file.path;
+      publicId = req.file.filename;
+    } else if (type === 'video') {
       url = youtubeUrl;
       // Extract YouTube ID for thumbnail
       const ytId = youtubeUrl && youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
       thumbnailUrl = ytId ? `https://img.youtube.com/vi/${ytId[1]}/hqdefault.jpg` : '';
-    } else if (req.file) {
-      // Cloudinary file upload
-      url = req.file.path;
-      thumbnailUrl = req.file.path;
-      publicId = req.file.filename;
     } else if (req.body.url) {
       // Direct image URL (no file uploaded)
       url = req.body.url;

@@ -12,8 +12,8 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'yasarathna_motors',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, quality: 'auto' }],
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'mp4'],
+    resource_type: 'auto',
   },
 });
 

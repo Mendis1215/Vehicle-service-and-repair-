@@ -21,18 +21,18 @@ function StatsTab() {
           messages: d.contactCount,
         });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const cards = stats
     ? [
-        { label: 'Total Reviews', value: stats.totalReviews, icon: FaComments, color: 'text-blue-400' },
-        { label: 'Pending Reviews', value: stats.pendingReviews, icon: FaComments, color: 'text-yellow-400' },
-        { label: 'Approved Reviews', value: stats.approvedReviews, icon: FaCheck, color: 'text-green-400' },
-        { label: 'Gallery Items', value: stats.galleryItems, icon: FaImages, color: 'text-purple-400' },
-        { label: 'Services', value: stats.services, icon: FaTools, color: 'text-brand-red' },
-        { label: 'Messages', value: stats.messages, icon: FaEnvelope, color: 'text-orange-400' },
-      ]
+      { label: 'Total Reviews', value: stats.totalReviews, icon: FaComments, color: 'text-blue-400' },
+      { label: 'Pending Reviews', value: stats.pendingReviews, icon: FaComments, color: 'text-yellow-400' },
+      { label: 'Approved Reviews', value: stats.approvedReviews, icon: FaCheck, color: 'text-green-400' },
+      { label: 'Gallery Items', value: stats.galleryItems, icon: FaImages, color: 'text-purple-400' },
+      { label: 'Services', value: stats.services, icon: FaTools, color: 'text-brand-red' },
+      { label: 'Messages', value: stats.messages, icon: FaEnvelope, color: 'text-orange-400' },
+    ]
     : [];
 
   return (
@@ -133,11 +133,10 @@ function ReviewsTab() {
                   </td>
                   <td className="py-3 pr-4 text-brand-text-gray max-w-xs truncate">{r.comment}</td>
                   <td className="py-3 pr-4">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      r.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${r.status === 'approved' ? 'bg-green-500/20 text-green-400' :
                       r.status === 'hidden' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-blue-500/20 text-blue-400'
-                    }`}>
+                        'bg-blue-500/20 text-blue-400'
+                      }`}>
                       {r.status || 'pending'}
                     </span>
                   </td>
@@ -181,13 +180,14 @@ function GalleryTab() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ type: 'image', url: '', caption: '' });
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const fetchItems = () => {
     setLoading(true);
     API.get('/gallery')
       .then((res) => setItems(res.data || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   };
 
@@ -195,19 +195,33 @@ function GalleryTab() {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (form.type === 'image' && !form.url.trim()) return toast.error('URL is required');
-    if (form.type === 'video' && !form.url.trim()) return toast.error('YouTube URL is required');
+    if (!file && form.type === 'image' && !form.url.trim()) return toast.error('File or URL is required');
+    if (!file && form.type === 'video' && !form.url.trim()) return toast.error('File or YouTube URL is required');
     setUploading(true);
     try {
-      const payload = form.type === 'video'
-        ? { type: 'video', youtubeUrl: form.url, caption: form.caption }
-        : { type: 'image', url: form.url, caption: form.caption };
-      await API.post('/admin/gallery', payload);
+      const formData = new FormData();
+      formData.append('type', form.type);
+      if (form.caption) formData.append('caption', form.caption);
+
+      if (file) {
+        formData.append('image', file);
+      } else {
+        if (form.type === 'video') formData.append('youtubeUrl', form.url);
+        else formData.append('url', form.url);
+      }
+
+      await API.post('/admin/gallery', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       toast.success('Gallery item added');
       setForm({ type: 'image', url: '', caption: '' });
+      setFile(null);
+      const fileInput = document.getElementById('gallery-file-input');
+      if (fileInput) fileInput.value = '';
       fetchItems();
-    } catch {
-      toast.error('Failed to add item');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to add item');
     } finally {
       setUploading(false);
     }
@@ -245,17 +259,26 @@ function GalleryTab() {
           </div>
           <div className="sm:col-span-2">
             <label className="text-brand-text-gray text-xs font-body mb-1 block">
-              {form.type === 'video' ? 'YouTube URL' : 'Image URL'}
+              {form.type === 'video' ? 'Video File (MP4) or YouTube URL' : 'Image File (PNG/JPG) or URL'}
             </label>
-            <input
-              id="gallery-url-input"
-              type="text"
-              value={form.url}
-              onChange={(e) => setForm({ ...form, url: e.target.value })}
-              className="w-full bg-brand-dark border border-brand-gray/50 rounded px-3 py-2 text-brand-white font-body text-sm focus:outline-none focus:border-brand-red"
-              placeholder={form.type === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://...'}
-              required
-            />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                id="gallery-file-input"
+                type="file"
+                accept={form.type === 'video' ? 'video/mp4' : 'image/png, image/jpeg, image/webp'}
+                onChange={(e) => setFile(e.target.files[0])}
+                className="w-full bg-brand-dark border border-brand-gray/50 rounded px-2 py-1.5 text-brand-text-gray font-body text-sm focus:outline-none focus:border-brand-red flex-1"
+              />
+              <span className="text-brand-text-gray self-center text-xs">OR</span>
+              <input
+                id="gallery-url-input"
+                type="text"
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                className="w-full bg-brand-dark border border-brand-gray/50 rounded px-3 py-2 text-brand-white font-body text-sm focus:outline-none focus:border-brand-red flex-1"
+                placeholder={form.type === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://...'}
+              />
+            </div>
           </div>
           <div className="sm:col-span-3">
             <label className="text-brand-text-gray text-xs font-body mb-1 block">Caption (optional)</label>
@@ -326,7 +349,7 @@ function ServicesTab() {
     setLoading(true);
     API.get('/services')
       .then((res) => setServices(res.data || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   };
 
